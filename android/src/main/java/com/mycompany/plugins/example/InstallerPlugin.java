@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.util.Log;
 
 import androidx.core.content.FileProvider;
 
@@ -12,7 +13,7 @@ import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.annotation.CapacitorPlugin;
-import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.PluginMethod;
 
 import java.io.File;
 
@@ -36,13 +37,20 @@ public class InstallerPlugin extends Plugin {
             return;
         }
 
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setDataAndType(getUriFromFile(context, apkFile), "application/vnd.android.package-archive");
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        try {
+            Uri apkUri = getUriFromFile(context, apkFile);
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(apkUri, "application/vnd.android.package-archive");
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
-        context.startActivity(intent);
-        call.resolve();
+            Log.d("InstallerPlugin", "Starting APK installation intent.");
+            context.startActivity(intent);
+            call.resolve();
+        } catch (Exception e) {
+            Log.e("InstallerPlugin", "Error installing APK", e);
+            call.reject("Error installing APK: " + e.getMessage());
+        }
     }
 
     private Uri getUriFromFile(Context context, File file) {
